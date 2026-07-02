@@ -278,3 +278,100 @@ Stage Summary:
 - Users can now download the complete single-file HTML UI directly from the app topbar (green "Download HTML" button).
 - File: public/download/propertiku-agent-ui.html (~168 KB, 2027 lines, self-contained: Tailwind + Lucide + Chart.js + vanilla JS).
 - Also accessible directly at /ui.html or /download/propertiku-agent-ui.html for viewing.
+
+---
+Task ID: T1
+Agent: template-builder
+Task: Create a complete multi-file HTML template package in `public/template/` — separate HTML files per page + shared assets folder + an index gallery page + a README. Source of truth: existing `public/ui.html` single-file build + `src/lib/{types,rbac,mock-data}.ts`.
+
+Work Log:
+- Read source-of-truth files (worklog, types.ts, rbac.ts, mock-data.ts, ui.html 2027 lines, src/components/auth & src/components/modules) to mirror design tokens, data, RBAC, and module content exactly.
+- Created `public/template/` directory structure: 13 HTML pages + `assets/` folder with 8 shared files + `README.md`.
+- Shared assets created (vanilla JS exposed on `window`, no ES modules — works standalone):
+  - `assets/shared.css` — design tokens (:root + .dark), custom emerald scrollbar, chat bubble shapes (`.bubble-out` / `.bubble-in`), chat-bg dot pattern, animations (fade-in, slide-in, pulse-dot, toast-in), `.no-scrollbar`, `.truncate-2`, btn/card/badge helpers.
+  - `assets/tailwind-config.js` — sets `tailwind.config` after CDN loads (darkMode:'class', color tokens, radius, Inter font).
+  - `assets/data.js` — verbatim copy of all mock data from `src/lib/mock-data.ts` (DEMO_ACCOUNTS, ALL_USERS, WA_SESSIONS, CONTACTS, CHAT_MESSAGES, PROPERTIES, ORDERS, CAMPAIGNS, MESSAGE_TEMPLATES, INVOICES, REVENUE_TREND, LEAD_SOURCE, FUNNEL_DATA) + `formatCurrency()` / `formatFullCurrency()`.
+  - `assets/rbac.js` — ROLES, ROLE_LABELS, MENU_ITEMS, ROLE_THEME (with `dot` field), VIEW_FILE (key→html filename), VIEW_TITLES, menuForRole(), canAccess(), defaultViewForRole().
+  - `assets/auth.js` — localStorage keys `propertiku-auth` and `propertiku-theme` (matching task spec); `applyTheme()` runs on script load (anti-flash); getCurrentUser/setCurrentUser/login/register/loginAs/logout/requireAuth/requireAccess; toast() helper exposed globally; escapeHtml/initials/nowTime/todayStr utilities.
+  - `assets/layout.js` — renderSidebar() (active link via activeView param), renderTopbar() (search, theme toggle, notif dropdown, user menu), renderLayoutShell(activeView, contentHtml), initLayout() (lucide refresh + dropdown/modal listeners), openSidebar/closeSidebar, toggleDropdown, openModal/closeModal.
+  - `assets/ui-helpers.js` — badge meta maps (STAGE_META, TAG_META, ORDER_STATUS_META, PROP_STATUS_META, PROP_TYPE_META, INVOICE_STATUS_META, PAYMENT_META, CAMPAIGN_STATUS_META, TONE_BG) + badge render helpers (stageBadge, tagChips, orderStatusBadge, propStatusBadge, invoiceStatusBadge, campaignStatusBadge, roleBadge).
+  - `assets/charts.js` — Chart.js helpers with destroy-guard: `revenueAreaChart(id, data)` (emerald gradient area + teal target line), `leadSourceDonut(id, data)` (PIE_COLORS), `financeBarChart(id, data)` (emerald→teal gradient bars), `invoiceStatusDonut(id, counts)` (4 colors), `campaignBarChart(id, data)` (read vs replied).
+- HTML pages (each has head with: Tailwind CDN + tailwind-config.js + Lucide CDN + [Chart.js CDN where needed] + Inter font + shared.css + anti-flash inline theme script; body has `<div id="app">`; scripts loaded at body end):
+  - `index.html` — gallery: emerald gradient hero, 6 role quick-login buttons (set localStorage + toast), 12 page cards with icon + name + desc + "Buka" link, download-source note, demo accounts grid, footer tech badges.
+  - `login.html` — 2-col auth shell (emerald branding panel + form); email+password with show/hide; "Ingat saya"; "Masuk"; 6 role quick-login buttons (3×2 grid, role-colored); demo hint; links to register & forgot.
+  - `register.html` — name/email/phone/password/confirm + terms checkbox; "Daftar Sekarang" → sets auth (operator) → redirect dashboard.
+  - `forgot-password.html` — email form → success state "Cek Email Anda" with back-to-login.
+  - `dashboard.html` — `kpisForRole(role)` returns role-aware KPI set (6 role variants); greeting + role badge; 4 KPI cards; revenue area chart + lead source donut; funnel (4 horizontal bars lead→prospect→negotiation→deal); recent orders table (5 rows, click→orders.html); WA sessions list with status dots + battery; unread chats list (if canAccess chatbot, else "Statistik Properti" card); AI activity card.
+  - `chatbot.html` — 3-col app-like layout (height: calc(100vh - 7rem)); left: WA session selector + status + battery + unread badge, contact search + Semua/Belum dibaca/Saya filter tabs, contact list with avatar/stage dot/last msg/unread badge; middle: conversation header + chat-bg scrollable messages (inbound bubble-in left, outbound bubble-out emerald right, AI badge, status ticks ✓/✓✓ sky-400 when read), AI suggestion bar, template dropdown + AI Auto + Saran toggles, input with attach/emoji/send; right: contact info panel (stage select, tag chips with add/remove, property interest, assigned, quick actions, notes). Send → push outbound (status sent→delivered@800ms→read@1500ms) + if AI Auto on → push AI inbound reply after 1200ms. Mobile: list↔conversation swap, info panel hidden.
+  - `contacts.html` — 4 stat cards; pipeline funnel bar (lead/prospect/negotiation/customer horizontal stacked with %); filter row (search + stage + tag + card/table view toggle); card grid with avatar/phone/stage badge/tags/property/assigned/last msg/Chat+Detail buttons; table view; detail modal with activity timeline + WhatsApp button.
+  - `properties.html` — stat strip (Total/Tersedia/Terjual/Total Nilai); filter (search + type pills + status select); grid of property cards with image (unsplash URLs, onerror fallback), type badge, status badge, price (emerald), title, location, specs (bed/bath/area), agent avatar; detail modal.
+  - `orders.html` — stat strip; filter (search + status + type + table/kanban toggle); table view (code/client/property/type/amount/status/agent/date/Lihat); kanban view (5 columns baru/diproses/negosiasi/deal/gagal with cards); detail modal with status timeline + actions (Cetak Invoice / Hubungi Klien).
+  - `marketing.html` — 3 tabs (Kampanye | Template Pesan | Broadcast): Kampanye has 4 stat cards, filter pills, campaign cards (channel icon, status badge, 4 stats grid, progress bar, message preview, Pause button for aktif), bar chart of read vs replied per campaign; Template has grid of template cards with Gunakan/Salin; Broadcast has composer (channel/audience/template dropdown fills textarea/message/schedule) + WhatsApp phone-frame preview with live message render.
+  - `finance.html` — stat strip (Pendapatan/Piutang/Invoice Lunas/Jatuh Tempo); revenue bar chart + invoice status donut; filter pills + search; invoice table (number/client/amount/method badge/status badge/dates/Lihat+Tandai Lunas+Cetak actions); detail modal with from/to/dates + line items table + PPN 11% + total; mark-as-paid updates state + toast.
+  - `users.html` — 4 stat cards; role overview grid (6 cards with role-colored avatar, label, count, description, accessible menu badges); users table (avatar+name/email/phone/role badge/status/created/last login/Edit+Suspend+Activate+Delete); Add user modal with live menu access preview (updates on role dropdown change); Edit user modal with same live preview.
+  - `settings.html` — 4 tabs (Profil | Integrasi WhatsApp | RBAC & Hak Akses | Preferensi): Profil has avatar card + form + password change; Integrasi has WA API URL/key (with show/hide)/default session/Test Koneksi button + WA sessions list with Scan QR/Connect-Disconnect; RBAC has 9×6 permission matrix (emerald check / muted X) with superadmin-only note; Preferensi has 5 toggle switches (Tema Gelap calls toggleTheme+rerender, Notif Email, Notif Push, Auto-reply AI, Suara), language select, save button.
+- `README.md` — title/description, tech stack table, file structure tree, cara pakai (4 scenarios), demo accounts table, kustomisasi (data/rbac/tema/halaman baru), cross-page behavior, RBAC matrix, catatan.
+
+Cross-page behavior implemented:
+- Every dashboard page: `requireAuth()` (redirect to login.html if no auth) + `requireAccess(view)` (redirect to dashboard.html with toast if role can't access).
+- Auth state: `localStorage.propertiku-auth` (user object).
+- Theme: `localStorage.propertiku-theme` applied via inline head script (anti-flash) + auth.js applyTheme() on load + toggleTheme() in topbar.
+- Sidebar: plain `<a href="...html">` links; active item highlighted via `activeView` param to `renderLayoutShell`.
+- Logout: clears auth → redirect to login.html (with 200ms delay for toast).
+- Gallery + login quick-login buttons: set auth via `loginAs(role)` then redirect to dashboard.html.
+
+Verification (agent-browser on port 3000):
+- 13 pages visited: ALL clean (zero console errors except Tailwind CDN production warning, zero page errors).
+- index.html: 12 cards + 6 role buttons render; clicking role sets localStorage + toast; clicking page card navigates.
+- login.html: form submit redirects to dashboard.html; 6 quick-login buttons work.
+- register.html: form submit (with terms checked) sets auth → redirect dashboard.html.
+- forgot-password.html: submit → success state with back-to-login.
+- dashboard.html: KPIs role-aware (verified admin role shows Pendapatan/Order Berjalan/Pengguna Aktif/Chat Belum Dibaca); revenue + lead charts render (verified Chart.getChart non-null with datasets); funnel + recent orders + WA sessions + AI activity all render.
+- chatbot.html: sent message → outbound appended → ticks ✓✓ → AI reply appears after 1.2s (verified inbound count increased).
+- contacts.html: card↔table view toggle works; detail modal opens with activity timeline.
+- properties.html: grid renders with images; detail modal opens.
+- orders.html: table↔kanban toggle works (8 rows ↔ 5 columns); row click opens detail modal.
+- marketing.html: 3 tabs (Kampanye/Template/Broadcast) all render; bar chart renders; template Gunakan switches to Broadcast tab; broadcast composer + WhatsApp preview render.
+- finance.html: revenue bar + invoice donut render; mark-as-paid toast fires.
+- users.html: 9 rows; add user modal → submit → row count increases to 10; edit user modal → role change updates live menu access preview (e.g. marketing shows Dashboard/Chatbot/Kontak/Properti/Marketing/Pengaturan — no Order/Finance/Users).
+- settings.html: all 4 tabs render; RBAC matrix shows 9 rows × 6 role columns; Integrasi shows WA sessions with Connect/Disconnect; Preferensi theme toggle persists.
+- Theme toggle: dark mode applied on first paint (htmlClass="dark"); toggle updates localStorage; reload preserves theme (htmlClass="" for light); navigation between pages preserves theme.
+- Mobile 390px: dashboard hamburger opens sidebar overlay; chatbot swaps list↔conversation on contact tap; no horizontal scroll on any page.
+- RBAC denial: marketing role loading `/template/users.html` → redirected to dashboard.html with toast (verified URL change).
+- `bun run lint` → exit 0 (clean).
+
+Issue found + fixed during verification:
+- Initial build: `login.html`, `register.html`, `forgot-password.html`, and `index.html` were missing `<script src="assets/layout.js">` tag, but their inline scripts called `refreshIcons()` (defined in layout.js). This caused a ReferenceError that aborted the script before the form submit listener was attached, so forms fell back to native GET submission (URL became `register.html?name=Test+User&...`). Fixed by adding `<script src="assets/layout.js">` to all 4 pages. Re-verified: all form submits now go through JS handler (preventDefault) and redirect properly.
+
+Stage Summary:
+- Complete multi-file HTML template package delivered at `public/template/` — 22 files, 3,416 lines.
+- Every page opens standalone, works in dark/light, mobile-responsive, RBAC-enforced, with charts rendering.
+- Reused ~80% of `public/ui.html` logic (data, RBAC, badges, chatbot AI replies, modals, toasts) — split into 8 shared asset files instead of duplicating per page.
+- 2 extra asset files added beyond the spec (`tailwind-config.js` for cleaner head, `ui-helpers.js` for shared badge meta maps) — both documented in README.
+- Demo accounts work out-of-the-box (`superadmin@propertiku.id` / `demo1234`, etc.).
+- CDN-only (Tailwind Play CDN, Lucide, Chart.js, Inter font) — no build step, no npm.
+
+---
+Task ID: T2+T3 (main verification + ZIP package)
+Agent: main
+Task: Verify template package via Agent Browser + create ZIP download
+
+Work Log:
+- Verified template folder: 13 HTML pages + 8 shared assets + README.md (24 files, ~288 KB).
+- Opened /template/index.html → gallery with 12 page cards + 6 role quick-login buttons.
+- Login as Superadmin → dashboard.html renders with role-filtered sidebar + KPIs + charts.
+- Opened chatbot.html → sent "Halo, saya cek dulu ya" → AI auto-reply appeared ("Saya kirimkan brosur lengkap & form KPR-nya ya. Silakan dicek 📎").
+- Dark mode: toggled on chatbot.html → navigated to dashboard.html → dark class persisted (true). Cross-page theme persistence works.
+- Opened users.html (as superadmin) → RBAC matrix + user table render correctly.
+- Mobile 390px: hamburger "Buka menu" button → opens overlay sidebar with "Tutup menu" + menu items + Keluar.
+- Console: no errors (only Tailwind CDN production notice).
+- Created ZIP: download/propertiku-agent-template.zip (73 KB, 24 files). Copied to public/download/ for HTTP access (200 OK).
+- Updated topbar: two download buttons — "HTML (1 file)" (outline, single-file) + "Template (ZIP)" (emerald solid, package).
+- Verified both buttons render with correct href + download attribute.
+- Lint: 0 errors. Dev log: GET / 200 healthy.
+
+Stage Summary:
+- Multi-file HTML template package complete & verified.
+- Access: /template/index.html (browse online) or download ZIP (73 KB) via topbar button.
+- ZIP contains: 13 standalone HTML pages + assets/ (data.js, rbac.js, auth.js, layout.js, charts.js, ui-helpers.js, shared.css, tailwind-config.js) + README.md.
+- Each page works standalone (open .html directly). Auth + theme persist via localStorage. RBAC enforced cross-page.

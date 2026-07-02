@@ -72,15 +72,26 @@ export function Topbar() {
           {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </Button>
 
-        {/* Download HTML source */}
+        {/* Download HTML source — single file */}
         <a
           href="/download/propertiku-agent-ui.html"
           download="propertiku-agent-ui.html"
-          className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
+          className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-xs font-medium transition-colors"
           title="Download source code HTML (single file, siap dibuka di browser apa saja)"
         >
           <Download className="h-3.5 w-3.5" />
-          <span className="hidden lg:inline">Download HTML</span>
+          <span className="hidden lg:inline">HTML (1 file)</span>
+        </a>
+
+        {/* Download HTML Template Package — ZIP */}
+        <a
+          href="/download/propertiku-agent-template.zip"
+          download="propertiku-agent-template.zip"
+          className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
+          title="Download package template HTML (ZIP berisi 13 halaman terpisah + shared assets)"
+        >
+          <Download className="h-3.5 w-3.5" />
+          <span className="hidden lg:inline">Template (ZIP)</span>
         </a>
 
         {/* Notifications */}
