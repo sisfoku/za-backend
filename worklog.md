@@ -192,3 +192,72 @@ Stage Summary:
 - RBAC fully functional: menu filtering + content gating per role.
 - One runtime bug found & fixed (Finance null-reference).
 - App is production-ready for UI demo. Demo login: superadmin@propertiku.id / demo1234 (or any role quick-login button).
+
+---
+Task ID: H1
+Agent: html-builder
+Task: Create a single self-contained HTML file (`public/ui.html`) replicating the entire PropertiKu Agent Next.js app UI — runnable in any browser with no build step.
+
+Work Log:
+- READ worklog.md + source-of-truth files: types.ts, rbac.ts, mock-data.ts, auth-shell.tsx, sidebar.tsx, topbar.tsx (and confirmed the 9 module conventions from prior agent entries).
+- WROTE `/home/z/my-project/public/ui.html` (2027 lines, ~172 KB, single file, no local dependencies).
+- Tech approach (all CDN, no build):
+  * Tailwind CSS via Play CDN (`cdn.tailwindcss.com`) with inline `tailwind.config` setting `darkMode:'class'` and mapping shadcn token colors (background/foreground/primary/muted/card/sidebar/border/etc.) to CSS HSL variables.
+  * CSS variables defined in `:root` + `.dark` for full light/dark theme parity with the Next.js app (emerald-600 primary, teal/amber/violet/rose/pink/sky accents — NO indigo/blue).
+  * Lucide icons via CDN (`unpkg.com/lucide@latest`) + `lucide.createIcons()` called after every render.
+  * Chart.js 4 via CDN for charts (area chart for revenue, donut for lead sources, bar for finance revenue, donut for invoice status) with gradient fills and theme-aware grid colors.
+  * Custom CSS for scrollbars, chat dotted background, modal backdrop, toast animations, focus rings.
+- Data + RBAC copied verbatim from mock-data.ts / rbac.ts into a `<script>` block: DEMO_ACCOUNTS, ALL_USERS, WA_SESSIONS, CONTACTS, CHAT_MESSAGES, PROPERTIES, ORDERS, CAMPAIGNS, MESSAGE_TEMPLATES, INVOICES, REVENUE_TREND, LEAD_SOURCE, FUNNEL_DATA + `formatCurrency`/`formatFullCurrency` helpers; ROLES, ROLE_LABELS, ROLE_THEME, MENU_ITEMS, `menuForRole`, `canAccess`, VIEW_TITLES. All 6 roles (superadmin/admin/operator/manager/marketing/keuangan) with correct role-theme colors.
+- State object + vanilla JS render functions (no framework). Single `render()` dispatches to `renderAuth()` or `renderDashboard()`. State persisted to `localStorage` (user, activeView, theme, active ids) so reload keeps session. Toast helper (fixed bottom-right) for all feedback.
+- Auth flow: 2-column layout matching auth-shell.tsx (emerald/teal gradient branding panel + form panel). Login form has email/password/"Ingat saya"/6 role quick-login buttons (each logs in as that role instantly)/links to register & forgot. Register form (nama/email/WA/password/konfirmasi/terms → role "operator"). Forgot password with success state "Cek email Anda". Fallback: any email + password ≥4 chars logs in as operator.
+- Dashboard shell: left sidebar (brand, role-filtered menu via `menuForRole`, active item emerald-highlighted, unread badge "8" on Chatbot, user card at bottom with role-color + logout). Mobile hamburger → full-screen overlay sidebar (slide-in animation). Topbar: page title+desc, desktop search box, theme toggle, notifications dropdown (4 mock), user menu dropdown (profile/settings/help/logout). Dropdowns close on outside-click + Escape.
+- 9 modules implemented as `render<Module>(host)` functions:
+  * Overview: role-aware greeting, 4 role-aware KPI cards (keuangan shows pendapatan/piutang/lunas/jatuh-tempo; marketing shows leads/campaign/chats/resolution; etc.), Chart.js revenue area chart with target line, lead-source donut, conversion funnel bars, recent orders table (5 rows, clickable → orders), WA sessions list, unread-chats list (role-gated by `canAccess` chatbot — falls back to property stats card for non-chat roles), AI activity card.
+  * Chatbot (Waha): 3-column. Left = WA session selector (status dot, battery), contact list with search + Semua/Belum dibaca/Saya filter tabs + unread badges + stage dots. Middle = conversation (inbound left card, outbound right emerald, AI badge with Bot icon, status ticks ✓/✓✓/✓✓sky/✕), template dropdown, AI auto-reply + AI suggestion toggles, growing textarea (Enter=send, Shift+Enter=newline). Send → appends outbound (sent→delivered@800ms→read@1500ms), AI auto-reply after 1.2s from canned Indonesian pool. Right = contact info panel (stage select, editable tag chips, property interest, assigned, quick actions, notes). Mobile swaps list↔conversation.
+  * Contacts & Leads: 4 stat cards, pipeline funnel bar (4 stages), filter (search + stage + tag), card grid + table view toggle. Cards: avatar+unread, name, phone, stage badge, tag chips, property interest, assigned, last message, Chat button → navigates to chatbot + sets activeContactId. Detail modal with timeline.
+  * Properties: stat strip, type pills + status select + search filter, responsive grid of cards with unsplash images (onerror fallback), type/status badges, emerald price, specs (bed/bath/area), agent, detail modal.
+  * Orders: stat strip, filter (search + status + type), table + kanban toggle. Table: code/client/property/type/amount/status/agent/date/view. Kanban: 5 columns (baru/diproses/negosiasi/deal/gagal) with counts + sums. Detail modal with timeline + status + Hubungi Klien → chatbot.
+  * Marketing: 3 tabs — Kampanye (cards with stats + progress bar + jeda action), Template Pesan (template cards with Gunakan/Salin), Broadcast (composer with template dropdown + char count + WhatsApp phone-frame preview with live placeholder replacement).
+  * Finance: stat strip (pendapatan/piutang/lunas/jatuh-tempo), Chart.js revenue bar chart + invoice status donut, filter pills (colored dots) + search, invoice table with method icons + status badges, view modal with mock invoice (PPN 11%), "Tandai Lunas" action updates state + toast.
+  * Users (RBAC): 6 role overview cards (label, description, user count, accessible menu list = RBAC matrix visualization), user table (avatar with role color, name/email/phone, role badge, status, created, last login, actions: edit/suspend/delete), add dialog.
+  * Settings: 4 tabs — Profil (form + password change), Integrasi WhatsApp/Waha (API URL/key/session, test connection with fake loading, sessions list with Scan QR + Putus/Sambung), RBAC & Hak Akses (permission matrix: 9 menu rows × 6 role cols with green check / muted X, amber warning for non-superadmin), Preferensi (5 toggles including dark-mode toggle wired to theme, language select).
+- Cross-module nav wired: contacts Chat → chatbot; orders Hubungi Klien → chatbot; orders "Buat Order" links; overview orders table → orders; etc.
+- Quality: every button does something (toast or action); all text Indonesian; responsive (mobile-first, sidebar overlay, tables scroll-x with min-w); dark mode fully toggles; charts render visibly; long lists use max-h + overflow-y-auto + styled scrollbar.
+
+VERIFICATION (agent-browser against http://localhost:3000/ui.html, dev server running on port 3000):
+- Login page renders: email/password/"Ingat saya"/6 role quick-login buttons (Superadmin/Admin/Operator/Manager/Marketing/Keuangan)/Daftar gratis/Lupa password links. ✓
+- Clicked Superadmin quick-login → dashboard renders with all 9 menu items + role-aware KPIs + greeting "Selamat malam, Andi! 👋" + revenue area chart + lead-source donut + funnel + 5-row orders table. ✓
+- Chatbot module: WA session selector (3 sessions with status dots), contact list (10 contacts, unread badges), conversation with existing messages, sent a test message via Enter → outbound bubble appended + AI auto-reply appeared after 1.2s. No errors. ✓
+- Clicked through Contacts, Properties, Orders, Marketing, Finance, Users, Settings — every module renders content, zero page errors, zero console errors (only the expected Tailwind-CDN-in-production warning). ✓
+- Settings → Profil shows form; Integrasi shows Waha config + sessions; RBAC shows 9×6 permission matrix; Preferensi shows 5 toggles + language. ✓
+- Dark mode toggle: clicked topbar theme button → `document.documentElement.classList.contains('dark')` === true. Visual theme switched correctly. ✓
+- Mobile viewport 390×844: hamburger button appears in topbar; clicking opens full-screen overlay sidebar with all menu items + Close (X) button + user card + logout. No horizontal overflow. ✓
+- RBAC filtering verified: logged in as Keuangan → sidebar shows only Dashboard / Order / Keuangan / Pengaturan (4 items, not 9). Overview shows keuangan-specific KPIs (Pendapatan/Piutang/Invoice Lunas/Jatuh Tempo) and the chat panel is replaced by a property-stats card (canAccess gate working). ✓
+- `agent-browser errors` → empty. `agent-browser console` → only Tailwind production warning. ✓
+- `bun run lint` → 0 errors, 0 warnings (HTML file not linted by eslint; existing TS files unaffected). ✓
+
+Stage Summary:
+- Single self-contained `public/ui.html` (2027 lines, 172 KB) replicates the entire PropertiKu Agent app UI: 3 auth screens + dashboard shell + all 9 modules + RBAC + dark mode + charts + mobile responsive, runnable by opening the file in any browser (or via the dev server at /ui.html).
+- All CDN-based (Tailwind Play, Lucide, Chart.js) — no npm/build step required. Verified end-to-end via agent-browser with zero errors.
+- Served at http://localhost:3000/ui.html (HTTP 200). Also opens directly as a file (`file://`) since all assets are remote CDN URLs.
+- Demo login: any of the 6 role quick-login buttons, or email `superadmin@propertiku.id` + password `demo1234`, or any email + any password ≥4 chars (→ operator).
+
+---
+Task ID: H2 (main verification of HTML UI)
+Agent: main
+Task: Verify the single-file HTML UI at public/ui.html via Agent Browser
+
+Work Log:
+- Confirmed file exists: public/ui.html (2,027 lines, ~172 KB, self-contained).
+- Opened http://localhost:3000/ui.html → login page renders (email/password, 6 role quick-login buttons, links).
+- Clicked Superadmin quick-login → dashboard with all 9 sidebar items + role-aware greeting.
+- Clicked through Chatbot, Properti, Order, Keuangan, Manajemen Pengguna modules — all render content, no errors.
+- Verified Users module shows RBAC matrix (role overview cards with Superadmin/Admin/etc).
+- Console errors: none (only expected Tailwind CDN production notice).
+- Dark mode toggle: html.dark class confirmed applied (eval = true).
+- Mobile 390px: hamburger button appears; opens full-screen sidebar overlay with all 9 menus + logout.
+- Lint: 0 errors, 0 warnings. Dev log: GET / 200 healthy.
+
+Stage Summary:
+- HTML UI fully verified end-to-end. Accessible at /ui.html via preview, or openable directly as a file.
+- Single self-contained file (Tailwind CDN + Lucide + Chart.js + vanilla JS). No build step needed.
