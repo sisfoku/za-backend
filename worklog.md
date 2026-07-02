@@ -261,3 +261,20 @@ Work Log:
 Stage Summary:
 - HTML UI fully verified end-to-end. Accessible at /ui.html via preview, or openable directly as a file.
 - Single self-contained file (Tailwind CDN + Lucide + Chart.js + vanilla JS). No build step needed.
+
+---
+Task ID: HD (HTML download setup)
+Agent: main
+Task: Set up easy download of the HTML source code UI
+
+Work Log:
+- Copied public/ui.html → public/download/propertiku-agent-ui.html (clean filename for download).
+- Verified HTTP 200 at /download/propertiku-agent-ui.html.
+- Added "Download HTML" button (emerald, Download icon) to dashboard topbar linking to /download/propertiku-agent-ui.html with download attribute.
+- Verified via Agent Browser: button appears after login, href and download attribute correct, file served 200.
+- Lint: 0 errors. Dev log healthy.
+
+Stage Summary:
+- Users can now download the complete single-file HTML UI directly from the app topbar (green "Download HTML" button).
+- File: public/download/propertiku-agent-ui.html (~168 KB, 2027 lines, self-contained: Tailwind + Lucide + Chart.js + vanilla JS).
+- Also accessible directly at /ui.html or /download/propertiku-agent-ui.html for viewing.

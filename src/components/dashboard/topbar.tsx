@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Menu, Search, Bell, Sun, Moon, LogOut, User as UserIcon,
-  Settings as SettingsIcon, HelpCircle, ChevronDown,
+  Settings as SettingsIcon, HelpCircle, ChevronDown, Download,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 import { useAppStore } from "@/lib/app-store";
@@ -71,6 +71,17 @@ export function Topbar() {
         <Button variant="ghost" size="icon" className="h-9 w-9 ml-auto md:ml-0" onClick={toggleTheme} title="Ganti tema">
           {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </Button>
+
+        {/* Download HTML source */}
+        <a
+          href="/download/propertiku-agent-ui.html"
+          download="propertiku-agent-ui.html"
+          className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors"
+          title="Download source code HTML (single file, siap dibuka di browser apa saja)"
+        >
+          <Download className="h-3.5 w-3.5" />
+          <span className="hidden lg:inline">Download HTML</span>
+        </a>
 
         {/* Notifications */}
         <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>
