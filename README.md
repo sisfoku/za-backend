@@ -34,3 +34,5 @@ Versi Template Multi-halaman (Direkomendasikan untuk eksplorasi): Buka file publ
 Versi Single-File: Buka file public/ui.html langsung di browser Anda. File ini berisi keseluruhan aplikasi dalam satu halaman HTML.
 
 Cukup klik kanan pada salah satu file tersebut di file explorer Anda dan pilih "Open with" lalu pilih browser favorit Anda (Chrome, Firefox, dll.).
+
+@by jonybelajar@gmail.com - programming
