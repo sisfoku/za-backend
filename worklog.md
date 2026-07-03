@@ -375,3 +375,21 @@ Stage Summary:
 - Access: /template/index.html (browse online) or download ZIP (73 KB) via topbar button.
 - ZIP contains: 13 standalone HTML pages + assets/ (data.js, rbac.js, auth.js, layout.js, charts.js, ui-helpers.js, shared.css, tailwind-config.js) + README.md.
 - Each page works standalone (open .html directly). Auth + theme persist via localStorage. RBAC enforced cross-page.
+
+---
+Task ID: FIX-MARKETING
+Agent: main
+Task: Fix Runtime ReferenceError "useAppStore is not defined" in Marketing module
+
+Work Log:
+- Investigated error: src/components/modules/marketing/marketing-page.tsx line 103 used `useAppStore()` but the import was missing (only `useAuthStore` was imported).
+- Added missing import: `import { useAppStore } from "@/lib/app-store";`
+- Scanned all other module pages for the same pattern (uses store but no import) — none found.
+- Verified via Agent Browser: login as superadmin → open Marketing → no error, 3 tabs (Kampanye/Template/Broadcast) render, stat cards + "Buat Kampanye" button visible, console clean.
+- Tested tab switching (Kampanye → Broadcast → Template) — all work.
+- Lint: 0 errors. Dev log: GET / 200 healthy.
+
+Stage Summary:
+- Bug fixed: missing import `useAppStore` in marketing-page.tsx.
+- Root cause: subagent that built Marketing module referenced the store without importing it.
+- Marketing module now fully functional.

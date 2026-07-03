@@ -34,6 +34,7 @@ import type {
   Campaign, CampaignChannel, CampaignStatus, MessageTemplate,
 } from "@/lib/types";
 import { useAuthStore } from "@/lib/auth-store";
+import { useAppStore } from "@/lib/app-store";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
